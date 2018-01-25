@@ -1,0 +1,5 @@
+build cmds
+1: cmake .. -G "Unix Makefiles" && make
+2: ./path_planning
+
+start with Project Walkthrough vid
