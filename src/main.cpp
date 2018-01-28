@@ -9,6 +9,7 @@
 #include "Eigen-3.3/Eigen/QR"
 #include "json.hpp"
 #include "spline.h"
+#include "trajectory_generator.h"
 
 using namespace std;
 
@@ -203,9 +204,9 @@ int main() {
   
   int lane = 1;//init lane is always 1
   double ref_val = 0;// 49.5;//start driving from 0, then save any update to this variable
-
+  TrajectoryGenerator traj_gen;
   h.onMessage([&ref_val,&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
-				 &map_waypoints_dx,&map_waypoints_dy,&lane
+				 &map_waypoints_dx,&map_waypoints_dy,&lane , &traj_gen
 				](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
@@ -252,54 +253,57 @@ int main() {
 				car_s = end_path_s;
 
 			bool too_close = false;
-			for (int i = 0; i < sensor_fusion.size(); i++)
-			{
-				float d = sensor_fusion[i][6];
-				//if another car in my lane
-				if (d < (2 + 4 * lane + 2) && d > (2 + 4 * lane - 2)) {
-					double vx = sensor_fusion[i][3];
-					double vy = sensor_fusion[i][4];
-					double check_speed = sqrt(vx*vx + vy*vy);
-					double check_car_s = sensor_fusion[i][5];
+			int force_ref_val = traj_gen.plan_path(sensor_fusion, car_s, car_d, prev_size, lane, too_close);
+			//for (int i = 0; i < sensor_fusion.size(); i++)
+			//{
+			//	float d = sensor_fusion[i][6];
+			//	//if another car in my lane
+			//	if (d < (2 + 4 * lane + 2) && d > (2 + 4 * lane - 2)) {
+			//		double vx = sensor_fusion[i][3];
+			//		double vy = sensor_fusion[i][4];
+			//		double check_speed = sqrt(vx*vx + vy*vy);
+			//		double check_car_s = sensor_fusion[i][5];
 
-					check_car_s += ((double)prev_size*0.02*check_speed);
-					
-					if ((check_car_s > car_s) && (check_car_s - car_s) < 30) {
-						too_close = true;
+			//		check_car_s += ((double)prev_size*0.02*check_speed);
+			//		
+			//		if ((check_car_s > car_s) && (check_car_s - car_s) < 30) {
+			//			too_close = true;
 
-						//switch lane
-						//TODO: FSM & cost function
-						if (lane > 0)
-						{
-							int newlane = lane-1;
-							bool canSwitch = true;
-							for (int i = 0; i < sensor_fusion.size(); i++){
-								float d2 = sensor_fusion[i][6];
-								if (d2 < (2 + 4 * newlane + 2) && d2 >(2 + 4 * newlane - 2)) {
-									double vx2 = sensor_fusion[i][3];
-									double vy2 = sensor_fusion[i][4];
-									double check_speed2 = sqrt(vx2*vx2 + vy2*vy2);
-									double check_car_s2 = sensor_fusion[i][5];
+			//			//switch lane
+			//			//TODO: FSM & cost function
+			//			if (lane > 0)
+			//			{
+			//				int newlane = lane-1;
+			//				bool canSwitch = true;
+			//				for (int i = 0; i < sensor_fusion.size(); i++){
+			//					float d2 = sensor_fusion[i][6];
+			//					if (d2 < (2 + 4 * newlane + 2) && d2 >(2 + 4 * newlane - 2)) {
+			//						double vx2 = sensor_fusion[i][3];
+			//						double vy2 = sensor_fusion[i][4];
+			//						double check_speed2 = sqrt(vx2*vx2 + vy2*vy2);
+			//						double check_car_s2 = sensor_fusion[i][5];
 
-									check_car_s2 += ((double)prev_size*0.02*check_speed2);
-									cout << "<30? " << (abs(check_car_s2 - car_s) < 30) << endl;
-									if (abs(check_car_s2 - car_s) < 30) {
-										canSwitch = false;
-										break;
-									}
+			//						check_car_s2 += ((double)prev_size*0.02*check_speed2);
+			//						cout << "<30? " << (abs(check_car_s2 - car_s) < 30) << endl;
+			//						if (abs(check_car_s2 - car_s) < 30) {
+			//							canSwitch = false;
+			//							break;
+			//						}
 
-								}
-							}
-							if(canSwitch)
-								lane = newlane;
-						}
-					}
-				}
-			}
+			//					}
+			//				}
+			//				if(canSwitch)
+			//					lane = newlane;
+			//			}
+			//		}
+			//	}
+			//}
 			//accelerate or deaccelerate if ego car is near another car
-			if (too_close) 
+			if (too_close) {
+				//ref_val = force_ref_val;
 				ref_val -= 0.324;
-			else if(ref_val < 49.5)
+			}
+			else if (ref_val < 49.5)
 				ref_val += 0.324;
 			
 
