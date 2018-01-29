@@ -252,8 +252,8 @@ int main() {
 			if (prev_size > 0)//make current s = last s
 				car_s = end_path_s;
 
-			bool too_close = false;
-			int force_ref_val = traj_gen.plan_path(sensor_fusion, car_s, car_d, prev_size, lane, too_close);
+			double slow_down_to = -1;//if -1, then do nothing, else slow down to this value
+			int force_ref_val = traj_gen.plan_path(sensor_fusion, car_s, car_d, prev_size, lane, slow_down_to);
 			//for (int i = 0; i < sensor_fusion.size(); i++)
 			//{
 			//	float d = sensor_fusion[i][6];
@@ -299,9 +299,10 @@ int main() {
 			//	}
 			//}
 			//accelerate or deaccelerate if ego car is near another car
-			if (too_close) {
+			if (slow_down_to > -1) {
 				//ref_val = force_ref_val;
-				ref_val -= 0.324;
+				if(ref_val > slow_down_to)
+					ref_val -= 0.324;
 			}
 			else if (ref_val < 49.5)
 				ref_val += 0.324;

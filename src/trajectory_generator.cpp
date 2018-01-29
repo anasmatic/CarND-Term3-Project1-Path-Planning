@@ -22,36 +22,34 @@ using namespace std;
 //constructor
 TrajectoryGenerator::TrajectoryGenerator() {}
 //_________________________________________________________________________
-int TrajectoryGenerator::plan_path(nlohmann::basic_json<>& sensor_fusion, double &car_s, double &car_d, int & previous_path_x_size, int & lane, bool & should_slowdown)
+int TrajectoryGenerator::plan_path(nlohmann::basic_json<>& sensor_fusion, double &car_s, double &car_d, int & previous_path_x_size, int & lane, double &slow_down_to)
 {
 
 	if (TrajectoryGenerator::state == LANE_KEEP) {
 		//TODO: if cost of keep lane < cost of lane change , then keep lane 
-		if (cost_of_LANEKEEP(sensor_fusion, car_s, previous_path_x_size, lane, should_slowdown) > 0)
+		if (cost_of_LANEKEEP(sensor_fusion, car_s, previous_path_x_size, lane, slow_down_to) > 0)
 		{//there is a cost for keeping lane
-			int cost_of_left = cost_of_LANE_CHANGE_LEFT(sensor_fusion, car_s, previous_path_x_size, lane);
-			int cost_of_right = cost_of_LANE_CHANGE_RIGHT(sensor_fusion, car_s, previous_path_x_size, lane);
-			if (cost_of_left < 10 && cost_of_right < 10) {
+			int cost_of_left = cost_of_LANE_CHANGE_LEFT(sensor_fusion, car_s, previous_path_x_size, lane, slow_down_to);
+			int cost_of_right = cost_of_LANE_CHANGE_RIGHT(sensor_fusion, car_s, previous_path_x_size, lane, slow_down_to);
+			if (cost_of_left < 5 || cost_of_right < 5) {
 				if (cost_of_left > cost_of_right) {
 					TrajectoryGenerator::state = LANE_CHANE_RIGHT;
 					lane += 1;
-					cout << endl;
 					cout << "RRRRRRRRRRRRRRrrr" << endl;
 				}
-				else {
+				else
+				{
 					TrajectoryGenerator::state = LANE_CHANE_LEFT;
 					lane-=1;
-					cout << endl;
 					cout << "LLLLLLLLLEEEEEFFFFFTTTTTTTT" << endl;
 				}
 			}
 		}//else keep lane !
-		cout<<"k "<< should_slowdown<<" ? ,";
+		//cout<<"k "<< should_slowdown<<" ? ,";
 		 //TODO: if cost of lane change is better, then change lane
 		 //TOOD: decide which lane to go to, 
 	}
 	else {
-		cout << "~" ;
 		if (car_d < (2 + 4 * lane + 2) && car_d >(2 + 4 * lane - 2)) {
 			TrajectoryGenerator::state = LANE_KEEP;
 			cout << "~~~~~~RESET 2 KEEP~~~~~~" << endl;
@@ -61,8 +59,9 @@ int TrajectoryGenerator::plan_path(nlohmann::basic_json<>& sensor_fusion, double
 
 //------------------ cost functions -------------------
 #pragma region CostFunctions
-int TrajectoryGenerator::cost_of_LANEKEEP(nlohmann::basic_json<>& sensor_fusion, double & car_s, int & previous_path_x_size, int & lane, bool & should_slowdown)
+int TrajectoryGenerator::cost_of_LANEKEEP(nlohmann::basic_json<>& sensor_fusion, double & car_s, int & previous_path_x_size, int & lane, double &slow_down_to)
 {
+	slow_down_to = -1.0;
 	//["sensor_fusion"] [0=ID, 1=x , 2=y , 3=xVelocity~m/s, 4=yVelocity~m/s, 5=s , 6=d ]
 	for (int i = 0; i < sensor_fusion.size(); i++)
 	{
@@ -77,7 +76,7 @@ int TrajectoryGenerator::cost_of_LANEKEEP(nlohmann::basic_json<>& sensor_fusion,
 			check_car_s += ((double)previous_path_x_size*0.02*check_speed);
 
 			if ((check_car_s > car_s) && (check_car_s - car_s) < 30) {//TODO: && check_speed < mycar speed
-				should_slowdown = true;
+				slow_down_to = check_speed*2.24;
 				return 1;
 				
 				double check_xV = sensor_fusion[i][5];
@@ -115,7 +114,8 @@ int TrajectoryGenerator::cost_of_LANEKEEP(nlohmann::basic_json<>& sensor_fusion,
 	return 0;
 }
 
-int TrajectoryGenerator::cost_of_LANE_CHANGE_LEFT(nlohmann::basic_json<> &sensor_fusion, double &car_s, int &previous_path_x_size, int &lane) {
+int TrajectoryGenerator::cost_of_LANE_CHANGE_LEFT(	nlohmann::basic_json<> &sensor_fusion, double &car_s, 
+													int &previous_path_x_size, int &lane, double &my_car_vel) {
 	//["sensor_fusion"] [0=ID, 1=x , 2=y , 3=xVelocity~m/s, 4=yVelocity~m/s, 5=s , 6=d ]
 		//switch lane
 		//todo: fsm & cost function
@@ -123,65 +123,91 @@ int TrajectoryGenerator::cost_of_LANE_CHANGE_LEFT(nlohmann::basic_json<> &sensor
 	if (lane > 0)//can switch to left, because I'm not in the far left
 	{
 		int newlane = lane - 1;
-		bool canswitch = true;
-		for (int i = 0; i < sensor_fusion.size(); i++) {
-			float d2 = sensor_fusion[i][6];//get near car lane
-			if (d2 < (2 + 4 * newlane + 2) && d2 >(2 + 4 * newlane - 2)) {//if near car is in left lane to me
-				double vx2 = sensor_fusion[i][3];
-				double vy2 = sensor_fusion[i][4];
-				double check_speed2 = sqrt(vx2*vx2 + vy2*vy2);
-				double check_car_s2 = sensor_fusion[i][5];
-
-				check_car_s2 += ((double)previous_path_x_size*0.02*check_speed2);
-				//cout << "<30? " << (abs(check_car_s2 - car_s) < 30) << endl;
-				if (abs(check_car_s2 - car_s) < 20) {
-					canswitch = false;
-					cost = 10;
-					cout <<" Left car speed: " << check_speed2*2.24 << endl;
-					break;
-				}
-
-			}
-		}
-		if (canswitch)
-			lane = newlane;
+		cout << "L > "<< newlane << endl;
+		lane_change_cost(sensor_fusion, car_s, previous_path_x_size, newlane, cost, my_car_vel);//function will change cost value
 	}
 	else cost = 10;
+	cout << " cost_._LEFT: " << cost << endl;
 	return cost;
 }
 
-int TrajectoryGenerator::cost_of_LANE_CHANGE_RIGHT(nlohmann::basic_json<> &sensor_fusion, double &car_s, int &previous_path_x_size, int &lane) {
+int TrajectoryGenerator::cost_of_LANE_CHANGE_RIGHT(	nlohmann::basic_json<> &sensor_fusion, double &car_s, 
+													int &previous_path_x_size, int &lane, double &my_car_vel) {
 	
 	int cost = 1;//always start with one, to prefare going left 
 	if (lane < 2)//can switch to left, because I'm not in the far left
 	{
 		int newlane = lane + 1;
-		bool canswitch = true;
-		for (int i = 0; i < sensor_fusion.size(); i++) {
-			float d2 = sensor_fusion[i][6];//get near car lane
-			if (d2 < (2 + 4 * newlane + 2) && d2 >(2 + 4 * newlane - 2)) {//if near car is in left lane to me
-				double vx2 = sensor_fusion[i][3];
-				double vy2 = sensor_fusion[i][4];
-				double check_speed2 = sqrt(vx2*vx2 + vy2*vy2);
-				double check_car_s2 = sensor_fusion[i][5];
-
-				check_car_s2 += ((double)previous_path_x_size*0.02*check_speed2);
-				//cout << "<30? " << (abs(check_car_s2 - car_s) < 30) << endl;
-				if (abs(check_car_s2 - car_s) < 20) {
-					canswitch = false;
-					cost = 10;
-					cout << " RIGHT car speed: " << check_speed2*2.24 << endl;
-					break;
-				}
-
-			}
-		}
-		if (canswitch)
-			lane = newlane;
+		cout << "R > " << newlane << endl;
+		lane_change_cost(sensor_fusion, car_s, previous_path_x_size, newlane, cost, my_car_vel);//function will change cost value
 	}
 	else cost = 10;
+	cout << " cost_._RRRR: " << cost << endl;
 	return cost;
 }
+
+//param: cost , if it was set by LeftLane fucntion it will be 0, but if from rightLane function it will be initialized as 1
+void TrajectoryGenerator::lane_change_cost(	nlohmann::basic_json<> &sensor_fusion, double &car_s, 
+											int &previous_path_x_size, int &newlane, int &cost, double &my_car_vel) {
+
+	for (int i = 0; i < sensor_fusion.size(); i++) {
+		float d2 = sensor_fusion[i][6];//get near car lane
+		if (d2 < (2 + 4 * newlane + 2) && d2 >(2 + 4 * newlane - 2)) {//if near car is in left lane to me
+			double vx2 = sensor_fusion[i][3];
+			double vy2 = sensor_fusion[i][4];
+			double check_speed2 = sqrt(vx2*vx2 + vy2*vy2);
+			double check_car_s2 = sensor_fusion[i][5];
+			check_car_s2 += ((double)previous_path_x_size*0.02*check_speed2);
+			double abs_delta_s = abs(check_car_s2 - car_s);
+			double delta_s = check_car_s2 - car_s;
+			cout << " delta_s : " << delta_s << endl;
+			
+			if (delta_s > 0) {//car in front
+				if (delta_s < 25) {//car is too close ?
+					if (check_speed2*2.24 > my_car_vel) {//is it faster than the car infront of me ?
+						//safe
+					}else{
+						cost+=5;
+					}
+				}
+			}else {//car coming from behind
+				if (delta_s < -25) {//car is too close ?
+					if (check_speed2*2.24 > my_car_vel) {//is it faster than the car infront of me ?
+						cost += 5;
+					}
+					else {
+						//safe
+					}
+				}
+			}
+			/*if (abs_delta_s < 30) {
+				cost += 1;//new_cost = param_cost + 1
+				cout << "	++cost @<30"<< endl;
+			}if (abs_delta_s < 25) {
+				cost += 1;//new_cost = param_cost + 2
+				cout << "	++cost @<25" << endl;
+			}if (abs_delta_s < 20) {
+				cost += 1;//new_cost = param_cost + 3
+				cout << "	++cost @<20" << endl;
+			}if (abs_delta_s < 15) {
+				cost += 1;//new_cost = param_cost + 4
+				cout << "	++cost @<15" << endl;
+			}if (abs_delta_s < 10) {
+				cost += 1;//new_cost = param_cost + 5
+				cout << "	++cost @<10" << endl;
+			}
+			if (abs_delta_s < 5) {
+				cost = 5;//new_cost = param_cost + 5
+				cout << "	++cost @<5" << endl;
+			}			  //cout << "<30? " << (abs(check_car_s2 - car_s) < 30) << endl;
+			if (cost >= 5) {
+				cout << " car speed: " << check_speed2*2.24 << endl;
+				break;
+			}*/
+		}
+	}
+}
+
 #pragma endregion
 
 

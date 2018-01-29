@@ -7,4 +7,11 @@ build cmds
 -implemented walkthrough code
 -implemented simple code to check for car before switch lane
 #git push
+take decision with destinations only
+not minding of side car is behind or front
+#git push
+check speed + destination of side car
+unite the change cost function
+#git push
+
 
