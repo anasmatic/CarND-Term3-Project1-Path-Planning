@@ -302,7 +302,7 @@ int main() {
 			if (slow_down_to > -1) {
 				//ref_val = force_ref_val;
 				if(ref_val > slow_down_to)
-					ref_val -= 0.324;
+					ref_val -= 0.424;
 			}
 			else if (ref_val < 49.5)
 				ref_val += 0.324;

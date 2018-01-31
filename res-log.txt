@@ -7,11 +7,22 @@ build cmds
 -implemented walkthrough code
 -implemented simple code to check for car before switch lane
 #git push
+
 take decision with destinations only
 not minding of side car is behind or front
 #git push
+
 check speed + destination of side car
 unite the change cost function
 #git push
+
+change Back cars logic to speed check.
+also for fronts cars add speed logic, 
+but penalitize more on distance.
++check front distance from far away :
+to choose right over left if left is busy in future
+//TODO: test go to left lane if @ lane2 and lane 1 busy in future
+it used to stuck ( i wrote the fix but didn't test)
+
 
 
