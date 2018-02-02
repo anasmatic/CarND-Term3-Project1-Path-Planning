@@ -23,6 +23,11 @@ but penalitize more on distance.
 to choose right over left if left is busy in future
 //TODO: test go to left lane if @ lane2 and lane 1 busy in future
 it used to stuck ( i wrote the fix but didn't test)
+#git push
 
+bug : some time car will get board in jams and push other cars away !
+fixed by adding (collisonCost function) and (PREPARE satates)
+now we won't change lane instantly, rather than that we will set the state to prepare first
+then check collsion cost.
 
 

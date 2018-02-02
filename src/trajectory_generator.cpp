@@ -52,7 +52,6 @@ void TrajectoryGenerator::plan_path(nlohmann::basic_json<>& sensor_fusion, doubl
 				else{
 					TrajectoryGenerator::state = PREPARE_LANE_CHANE_LEFT;
 				}
-				//cout << "_____________________________________________________" << endl;
 			}//end of (cost_of_left < 10 || cost_of_right < 10)
 		}//else cost_of_LANEKEEP<=0 keep lane !
 	//if current state is prepare change lane, do collision cost check, then decide to change lane or keep lane.
@@ -60,32 +59,24 @@ void TrajectoryGenerator::plan_path(nlohmann::basic_json<>& sensor_fusion, doubl
 		lane += 1;//change lane to right
 		if (cost_of_COLLISION(sensor_fusion, car_s, previous_path_x_size, lane) == 0) {//if no collision cost
 			TrajectoryGenerator::state = LANE_CHANE_RIGHT;//change state, and keep lane new value
-			//cout << "RRRRRRRRRRRRRRRRRRR" << endl;
 		}
 		else {//but if there is collision cost
 			lane -= 1;//revert lane change
 			TrajectoryGenerator::state = LANE_KEEP;//set state to keep
-			//cout << " |R| collision alert |R| " << endl;
 		}
-		//cout << "_____________________________________________________" << endl;
 	}
 	else if (TrajectoryGenerator::state == PREPARE_LANE_CHANE_LEFT) {//if current state is prepare left lane
 		lane -= 1;//change lane to left
 		if (cost_of_COLLISION(sensor_fusion, car_s, previous_path_x_size, lane) == 0) {//if no collision cost
 			TrajectoryGenerator::state = LANE_CHANE_LEFT;//change state, and keep lane new value
-			//cout << "LLLLLLLLLEEEEEFFFFFTTTTTTTT" << endl;
 		}
 		else {//but if there is collision cost
 			lane += 1;//revert lane change
 			TrajectoryGenerator::state = LANE_KEEP;//set state to keep
-			//cout << " |L| collision alert |L| " << endl;
 		}
-		//cout << "_____________________________________________________" << endl;
 	}else {//if state is LANE_CHANE_LEFT or LANE_CHANE_RIGHT , check if change is done, then reset to LANE_KEEP
 		if (car_d < (2 + 4 * lane + 2) && car_d >(2 + 4 * lane - 2)) {//if car is within new lane center
 			TrajectoryGenerator::state = LANE_KEEP;//change state to keep
-			//cout << "~~~~~~RESET 2 KEEP~~~~~~" << endl;
-			//cout << "_____________________________________________________" << endl;
 		}
 	}
 }
@@ -127,11 +118,9 @@ int TrajectoryGenerator::cost_of_LANE_CHANGE_LEFT(	nlohmann::basic_json<> &senso
 	if (lane > 0)//can switch to left, because I'm not in the far left
 	{
 		int newlane = lane - 1;//create new value for lane, because we want to keep lane until we evaluate cost
-		//cout << "L > "<< newlane << endl;
 		lane_change_cost(sensor_fusion, car_s, previous_path_x_size, newlane, cost, slow_down_to);//function will change cost value
 	}
 	else cost = MAX_COST;//can NOT change lane, because I'm at far left 
-	//cout << " cost_._LEFT: " << cost << endl;
 	return cost;
 }
 
@@ -143,11 +132,9 @@ int TrajectoryGenerator::cost_of_LANE_CHANGE_RIGHT(	nlohmann::basic_json<> &sens
 	if (lane < 2)//can switch to right, because I'm not in the far right
 	{
 		int newlane = lane + 1;//create new value for lane, because we want to keep lane until we evaluate cost
-		//cout << "R > " << newlane << endl;
 		lane_change_cost(sensor_fusion, car_s, previous_path_x_size, newlane, cost, my_car_vel);//function will change cost value
 	}
 	else cost = MAX_COST;//can NOT change lane, because I'm at far right
-	//cout << " cost_._RRRR: " << cost << endl;
 	return cost;
 }
 
@@ -166,21 +153,15 @@ void TrajectoryGenerator::lane_change_cost(	nlohmann::basic_json<> &sensor_fusio
 			check_car_s += ((double)previous_path_x_size*0.02*check_speed);
 			double delta_s = check_car_s - car_s;
 			double abs_delta_s = abs(delta_s);//save also absolute delta value
-			//cout << "{" << sensor_fusion[i][0] << "}>>> delta_s : " << delta_s << endl;
 			if (abs_delta_s < 60) {//if check_car is 60 units far away (check back and front)
-				//cout  << "  speed: "<<(check_speed*2.24)<<"vs"<<my_car_vel<< endl;
 				if (delta_s > 0) {//check_car in front
-					//cout << " F  " << endl;
 					if (abs_delta_s < 60) {//check_car is this range ?
 						if (check_speed*2.24 < my_car_vel) {//if it's slower than me, cost++
 							cost++;//increase cost
-							//cout << " F   slower "<< cost << endl;		
-						} //else /*faster than me*/
-							//cout << " F   fster" << endl;
+						} 
 
 						for (int i = 55; i >= 10; i-=5)//loop for every 5 units of distance
 						{
-							//cout << " F ~" << abs_delta_s <<"<"<< i << endl;
 							if (abs_delta_s < i)//the closer the check_car, the more is the cost
 								cost++;
 							
@@ -190,28 +171,20 @@ void TrajectoryGenerator::lane_change_cost(	nlohmann::basic_json<> &sensor_fusio
 					}
 				}
 				else {//car coming from behind
-					//cout << " B  " << endl;
 					if (abs_delta_s < 10) {//TOO CLOSE, never allow lane change
 						cost += MAX_COST;
-						//cout << " B   CANT !!! TOO CLOSE" << endl;
 					}
 					else if (abs_delta_s < 35) {//not so close ?
 						//predict check_car s after 2 seconds
 						double check_car_new_s = check_car_s+(((double)previous_path_x_size*0.04*check_speed));
 						//predict my s after 1 seconds
 						double my_car_new_s = car_s + (((double)previous_path_x_size*0.02*my_car_vel/2.24));
-						//cout << " B {"<<sensor_fusion[i][0] << "} now= " << check_car_s << ", after'2'= " << check_car_new_s <<" vs "<< my_car_new_s <<endl;
 						if (check_car_new_s >= my_car_new_s) { //if check_car may collide with me in the future
-							//cout << " B   CANT !!! it will hit me" << endl;
 							cost += MAX_COST;//NEVER ALLOW LANE CHANGE
-						}else {
-							//safe
-							//cout << " B   SAFE " << endl;
 						}
 					}
 				}//end of else
 			}//end of if(abs_delta_s < 30)
-			//if(cost < 10) cout << "___ SAFE.. "<< cost << endl;
 			//if cost returned is less than 10, then it is some how safe to change lane
 		}
 	}
@@ -232,7 +205,6 @@ int TrajectoryGenerator::cost_of_COLLISION(nlohmann::basic_json<>& sensor_fusion
 			double check_car_s = sensor_fusion[i][5];
 			check_car_s += ((double)previous_path_x_size*0.02*check_speed);
 			double abs_delta_s = abs(check_car_s - car_s);//save also absolute delta value
-			//cout << "cost_of_COLLISION:" << abs_delta_s << endl;
 			if (abs_delta_s <= COLLISION_ZONE)//check_car within collision zone :
 				return 1;//Cost is hight !
 

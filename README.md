@@ -1,140 +1,113 @@
 # CarND-Path-Planning-Project
 Self-Driving Car Engineer Nanodegree Program
-   
-### Simulator.
-You can download the Term3 Simulator which contains the Path Planning Project from the [releases tab (https://github.com/udacity/self-driving-car-sim/releases).
-
-### Goals
-In this project your goal is to safely navigate around a virtual highway with other traffic that is driving +-10 MPH of the 50 MPH speed limit. You will be provided the car's localization and sensor fusion data, there is also a sparse map list of waypoints around the highway. The car should try to go as close as possible to the 50 MPH speed limit, which means passing slower traffic when possible, note that other cars will try to change lanes too. The car should avoid hitting other cars at all cost as well as driving inside of the marked road lanes at all times, unless going from one lane to another. The car should be able to make one complete loop around the 6946m highway. Since the car is trying to go 50 MPH, it should take a little over 5 minutes to complete 1 loop. Also the car should not experience total acceleration over 10 m/s^2 and jerk that is greater than 10 m/s^3.
-
-#### The map of the highway is in data/highway_map.txt
-Each waypoint in the list contains  [x,y,s,dx,dy] values. x and y are the waypoint's map coordinate position, the s value is the distance along the road to get to that waypoint in meters, the dx and dy values define the unit normal vector pointing outward of the highway loop.
-
-The highway's waypoints loop around so the frenet s value, distance along the road, goes from 0 to 6945.554.
-
-## Basic Build Instructions
-
-1. Clone this repo.
-2. Make a build directory: `mkdir build && cd build`
-3. Compile: `cmake .. && make`
-4. Run it: `./path_planning`.
-
-Here is the data provided from the Simulator to the C++ Program
-
-#### Main car's localization Data (No Noise)
-
-["x"] The car's x position in map coordinates
-
-["y"] The car's y position in map coordinates
-
-["s"] The car's s position in frenet coordinates
-
-["d"] The car's d position in frenet coordinates
-
-["yaw"] The car's yaw angle in the map
-
-["speed"] The car's speed in MPH
-
-#### Previous path data given to the Planner
-
-//Note: Return the previous list but with processed points removed, can be a nice tool to show how far along
-the path has processed since last time. 
-
-["previous_path_x"] The previous list of x points previously given to the simulator
-
-["previous_path_y"] The previous list of y points previously given to the simulator
-
-#### Previous path's end s and d values 
-
-["end_path_s"] The previous list's last point's frenet s value
-
-["end_path_d"] The previous list's last point's frenet d value
-
-#### Sensor Fusion Data, a list of all other car's attributes on the same side of the road. (No Noise)
-
-["sensor_fusion"] A 2d vector of cars and then that car's [car's unique ID, car's x position in map coordinates, car's y position in map coordinates, car's x velocity in m/s, car's y velocity in m/s, car's s position in frenet coordinates, car's d position in frenet coordinates. 
-
-## Details
-
-1. The car uses a perfect controller and will visit every (x,y) point it recieves in the list every .02 seconds. The units for the (x,y) points are in meters and the spacing of the points determines the speed of the car. The vector going from a point to the next point in the list dictates the angle of the car. Acceleration both in the tangential and normal directions is measured along with the jerk, the rate of change of total Acceleration. The (x,y) point paths that the planner recieves should not have a total acceleration that goes over 10 m/s^2, also the jerk should not go over 50 m/s^3. (NOTE: As this is BETA, these requirements might change. Also currently jerk is over a .02 second interval, it would probably be better to average total acceleration over 1 second and measure jerk from that.
-
-2. There will be some latency between the simulator running and the path planner returning a path, with optimized code usually its not very long maybe just 1-3 time steps. During this delay the simulator will continue using points that it was last given, because of this its a good idea to store the last points you have used so you can have a smooth transition. previous_path_x, and previous_path_y can be helpful for this transition since they show the last points given to the simulator controller with the processed points already removed. You would either return a path that extends this previous path or make sure to create a new path that has a smooth transition with this last path.
-
-## Tips
-
-A really helpful resource for doing this project and creating smooth trajectories was using http://kluge.in-chemnitz.de/opensource/spline/, the spline function is in a single hearder file is really easy to use.
 
 ---
 
-## Dependencies
+### Setup :
+##### default project installation :
+1. mkdir build
+2. cd build
+3. cmake ..
+4. make
+5. ./path_planning
 
-* cmake >= 3.5
- * All OSes: [click here for installation instructions](https://cmake.org/install/)
-* make >= 4.1
-  * Linux: make is installed by default on most Linux distros
-  * Mac: [install Xcode command line tools to get make](https://developer.apple.com/xcode/features/)
-  * Windows: [Click here for installation instructions](http://gnuwin32.sourceforge.net/packages/make.htm)
-* gcc/g++ >= 5.4
-  * Linux: gcc / g++ is installed by default on most Linux distros
-  * Mac: same deal as make - [install Xcode command line tools]((https://developer.apple.com/xcode/features/)
-  * Windows: recommend using [MinGW](http://www.mingw.org/)
-* [uWebSockets](https://github.com/uWebSockets/uWebSockets)
-  * Run either `install-mac.sh` or `install-ubuntu.sh`.
-  * If you install from source, checkout to commit `e94b6e1`, i.e.
-    ```
-    git clone https://github.com/uWebSockets/uWebSockets 
-    cd uWebSockets
-    git checkout e94b6e1
-    ```
+##### my own Build Instructions
+I was using Windows 10 and VisualStudio17
 
-## Editor Settings
+Make sure to include the **CMakeLists.txt** from this repo,
+,because I added 2 files to resources :
+- src/trajectory_generator.h
+- src/trajectory_generator.cpp 
 
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
+to build this project using **Bash for window** :
 
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
+    navigate to projet folder
+    write cmd : mkdir build && cd build
+    write cmd : cmake .. -G "Unix Makefiles" && make
+    write cmd : ./path_planning
 
-## Code Style
+---
+### Goals
+check **Goals** section, at [udacity repo](https://developer.apple.com/xcode/features/)
 
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
+let's start with the fun part
+### Results
+  * the car can drive more than 5 miles without incedents
+  * it can keep safe distance from front car, and drive with constant speed without jerking
+  * it's aware of surronding cars, and car act saftly in traffic jams
+  * it will change lanes when needed too.
+      * will prefare left lane over right lane, if both are available.
+      * change lane in less than 3 second without jerking
+      * can detect cars on side lanes and predect thier next position.
+      * can detect cars on side lane for longer distance, witch allows better lane choice.
 
-## Project Instructions and Rubric
+here are some gif animation examples : *note: gif files quality are reduced for smaller sizes*
 
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
+1. the car will keep safe distance from the car in the front, and will change lane if available.
+it will alwyas prefare left lane if both lane are available.
+  
+   ![please wait for gif (_01-leftoverright.gif) to load](https://github.com/anasmatic/CarND-Term3-Path-Planning/blob/master/res/_01-leftoverright.gif)
+2. car will never get off the road, in this case it will change lane to right if left is blocked.
+
+   ![please wait for gif (_00-wontleaveroad.gif) to load](https://github.com/anasmatic/CarND-Term3-Path-Planning/blob/master/res/_00-wontleaveroad.gif)
+3. if front car breaks suddenly, our car can break without jerk, and keep safe distance , avoiding collision.
+
+   ![please wait for gif (_02break.gif) to load](https://github.com/anasmatic/CarND-Term3-Path-Planning/blob/master/res/_02break.gif)
+4. car can detect the speed of side lanes cars, this provides better dicision making , because we know if the car in the next lane is speeding up or not.
+
+   ![please wait for gif (_03detectspeed.gif) to load](https://github.com/anasmatic/CarND-Term3-Path-Planning/blob/master/res/_03detectspeed.gif)
+5. in case of traffic jam, car can drive as slow as the jam, avoiding collisions and not making chnage lane desisions without finding safe distances.
+
+   ![please wait for gif (_04jam.gif) to load](https://github.com/anasmatic/CarND-Term3-Path-Planning/blob/master/res/_04jam.gif)
+6. whenever car can find safe distance to do lane change, it will do it and do it fast, to fly out of the jam.
+
+   ![please wait for gif (_05outofjam.gif) to load](https://github.com/anasmatic/CarND-Term3-Path-Planning/blob/master/res/_05outofjam.gif)
 
 
-## Call for IDE Profiles Pull Requests
+### Code Exceplaning:
+  * I used initial code from project Walk-Through video on Youtube, code is documented , you can find it in <span style="color:green;">main.cpp</span> <span style="color:red;">line:247</span> to <span style="color:red;">line:363</span>.
+  * replaced the sensor fusion from the Walk-Through video to my function <span style="color:gray;">`plan_path`</span> <span style="color:red;">line:259</span>:
+  * I'll take about code flow, more details can be found in code in-line documentation.
 
-Help your fellow students!
+#### - state :
+I'm using 5 state :
+  * LANE_KEEP
+  * PREPARE_LANE_CHANE_RIGHT
+  * LANE_CHANE_RIGHT
+  * PREPARE_LANE_CHANE_LEFT
+  * LANE_CHANE_LEFT
 
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to ensure
-that students don't feel pressured to use one IDE or another.
+#### - cost :
+I'm also checking 2 costs :
+  * Cost_of_Lane_change :<br/> which forks to
+    * Cost_of_Lane_Keep
+    * Cost_of_Lane_Change_Right
+    * Cost_of_Lane_Change_Left
+  * Cost of Collision
 
-However! I'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
+car will be by default in LANE_KEEP state, but will check the Cost_of_Lane_Keep :
+- first check state
+  - if state is LANE_KEEP
+    - if no cost, we'll keep lane and state LANE_KEEP
+    - else we have to check Cost_of_Lane_change
+      - if cost is equal or more than MAX_COST, then no lane change, we'll keep lane and state LANE_KEEP
+      - else we have to compare right cost vs left cost, but we won't change lane instantly
+        - set state to PREPARE_LANE_CHANE_RIGHT or PREPARE_LANE_CHANE_LEFT, and wait for next update
+  - if state is PREPARE_LANE_CHANE_RIGHT or PREPARE_LANE_CHANE_LEFT
+    - check Cost of Collision
+      - if has Collision cost, abort lane change, we'll keep lane and state LANE_KEEP
+      - else set state to LANE_CHANE_RIGHT or LANE_CHANE_LEFT, and change lane right away
+  - finally check if Lane change is done , if it is done change make sure to reset state to LANE_KEEP
 
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
+#### - Cost functions details
+ - **collision** cost function uses position prediction , to compare my car vs another car in the future, if they may collapse, then a collision is possible
+ - **change lane** checks in two different approaches :
+   - I'd like to note that we are checking cars on side lane now
+   - **cars in-front us:**
+     - if ahead car is slower than me, this will increase the cost of lane change.
+     - then we check for distance between us and the ahead car, the close the more costly the decision is.
+   - **cars behind us :**
+     - first check distance, if too close, then don't change lane
+     - then check position is future, if the car behind me will be ahead of me after 2 seconds, then abort lane change, it is too dangerous.
 
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
-
-Frankly, I've never been involved in a project with multiple IDE profiles
-before. I believe the best way to handle this would be to keep them out of the
-repo root to avoid clutter. My expectation is that most profiles will include
-instructions to copy files to a new location to get picked up by the IDE, but
-that's just a guess.
-
-One last note here: regardless of the IDE used, every submitted project must
-still be compilable with cmake and make./
-
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
 
