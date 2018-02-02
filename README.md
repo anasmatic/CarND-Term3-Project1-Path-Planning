@@ -28,7 +28,7 @@ to build this project using **Bash for window** :
 
 ---
 ### Goals
-check **Goals** section, at [udacity repo](https://developer.apple.com/xcode/features/)
+check **Goals** section, at [udacity repo](https://github.com/udacity/CarND-Path-Planning-Project)
 
 let's start with the fun part
 ### Results
@@ -46,22 +46,22 @@ here are some gif animation examples : *note: gif files quality are reduced for 
 1. the car will keep safe distance from the car in the front, and will change lane if available.
 it will alwyas prefare left lane if both lane are available.
   
-   ![please wait for gif (_01-leftoverright.gif) to load](https://github.com/anasmatic/CarND-Term3-Path-Planning/blob/master/res/_01-leftoverright.gif)
+   ![ ](https://github.com/anasmatic/CarND-Term3-Project1-Path-Planning/blob/master/res/_01-leftoverright.gif)
 2. car will never get off the road, in this case it will change lane to right if left is blocked.
 
-   ![please wait for gif (_00-wontleaveroad.gif) to load](https://github.com/anasmatic/CarND-Term3-Path-Planning/blob/master/res/_00-wontleaveroad.gif)
+   ![ ](https://github.com/anasmatic/CarND-Term3-Project1-Path-Planning/blob/master/res/_00-wontleaveroad.gif)
 3. if front car breaks suddenly, our car can break without jerk, and keep safe distance , avoiding collision.
 
-   ![please wait for gif (_02break.gif) to load](https://github.com/anasmatic/CarND-Term3-Path-Planning/blob/master/res/_02break.gif)
+   ![ ](https://github.com/anasmatic/CarND-Term3-Project1-Path-Planning/blob/master/res/_02break.gif)
 4. car can detect the speed of side lanes cars, this provides better dicision making , because we know if the car in the next lane is speeding up or not.
 
-   ![please wait for gif (_03detectspeed.gif) to load](https://github.com/anasmatic/CarND-Term3-Path-Planning/blob/master/res/_03detectspeed.gif)
+   ![ ](https://github.com/anasmatic/CarND-Term3-Project1-Path-Planning/blob/master/res/_03detectspeed.gif)
 5. in case of traffic jam, car can drive as slow as the jam, avoiding collisions and not making chnage lane desisions without finding safe distances.
 
-   ![please wait for gif (_04jam.gif) to load](https://github.com/anasmatic/CarND-Term3-Path-Planning/blob/master/res/_04jam.gif)
+   ![ ](https://github.com/anasmatic/CarND-Term3-Project1-Path-Planning/blob/master/res/_04jam.gif)
 6. whenever car can find safe distance to do lane change, it will do it and do it fast, to fly out of the jam.
 
-   ![please wait for gif (_05outofjam.gif) to load](https://github.com/anasmatic/CarND-Term3-Path-Planning/blob/master/res/_05outofjam.gif)
+   ![ ](https://github.com/anasmatic/CarND-Term3-Project1-Path-Planning/blob/master/res/_05outofjam.gif)
 
 
 ### Code Exceplaning:
