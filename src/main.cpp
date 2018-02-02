@@ -244,110 +244,67 @@ int main() {
           	// Sensor Fusion Data, a list of all other cars on the same side of the road.
           	auto sensor_fusion = j[1]["sensor_fusion"];
 
-			/************/
+			/************************* Code from Walk-thought video ******************************/
 			int prev_size = previous_path_x.size();
 
 			//sensor fusion :
-
-			if (prev_size > 0)//make current s = last s
+			if (prev_size > 0)//if got history! make current s = last s
 				car_s = end_path_s;
 
+			//slow_down_to will help us keep the same speed of the front car to make sure there is no unnecessary jerking 
 			double slow_down_to = -1;//if -1, then do nothing, else slow down to this value
-			int force_ref_val = traj_gen.plan_path(sensor_fusion, car_s, car_d, prev_size, lane, slow_down_to);
-			//for (int i = 0; i < sensor_fusion.size(); i++)
-			//{
-			//	float d = sensor_fusion[i][6];
-			//	//if another car in my lane
-			//	if (d < (2 + 4 * lane + 2) && d > (2 + 4 * lane - 2)) {
-			//		double vx = sensor_fusion[i][3];
-			//		double vy = sensor_fusion[i][4];
-			//		double check_speed = sqrt(vx*vx + vy*vy);
-			//		double check_car_s = sensor_fusion[i][5];
-
-			//		check_car_s += ((double)prev_size*0.02*check_speed);
-			//		
-			//		if ((check_car_s > car_s) && (check_car_s - car_s) < 30) {
-			//			too_close = true;
-
-			//			//switch lane
-			//			//TODO: FSM & cost function
-			//			if (lane > 0)
-			//			{
-			//				int newlane = lane-1;
-			//				bool canSwitch = true;
-			//				for (int i = 0; i < sensor_fusion.size(); i++){
-			//					float d2 = sensor_fusion[i][6];
-			//					if (d2 < (2 + 4 * newlane + 2) && d2 >(2 + 4 * newlane - 2)) {
-			//						double vx2 = sensor_fusion[i][3];
-			//						double vy2 = sensor_fusion[i][4];
-			//						double check_speed2 = sqrt(vx2*vx2 + vy2*vy2);
-			//						double check_car_s2 = sensor_fusion[i][5];
-
-			//						check_car_s2 += ((double)prev_size*0.02*check_speed2);
-			//						cout << "<30? " << (abs(check_car_s2 - car_s) < 30) << endl;
-			//						if (abs(check_car_s2 - car_s) < 30) {
-			//							canSwitch = false;
-			//							break;
-			//						}
-
-			//					}
-			//				}
-			//				if(canSwitch)
-			//					lane = newlane;
-			//			}
-			//		}
-			//	}
-			//}
-			//accelerate or deaccelerate if ego car is near another car
-			if (slow_down_to > -1) {
-				//ref_val = force_ref_val;
-				if(ref_val > slow_down_to)
-					ref_val -= 0.424;
+			
+			//this function will calculate ChangeLaneCost and CollsionCost, it will return new values for :
+			//lane, & slow_down_to , as they are passed by reference, and manipulated in the cost functions
+			traj_gen.plan_path(sensor_fusion, car_s, car_d, prev_size, lane, slow_down_to);
+			
+			//right after getting update from "plan_path" function , decide the speed car should go with.
+			if (slow_down_to > -1) {//if slow_down_to has a value rather than the default -1 value
+				if(ref_val > slow_down_to)//make sure we won't exceed the slow_down_to value
+					ref_val -= 0.424;//decelerate with this amount, it will assure fast reaction and no jerking
 			}
-			else if (ref_val < 49.5)
+			else if (ref_val < 49.5)//otherwise, just accelerate to the max speed limit.
 				ref_val += 0.324;
 			
-
-			//end sensor fusion
-
 			//key points separated 30m each
 			vector<double> ptsx;
 			vector<double> ptsy;
-			//refernce x,y,yaw
+			//reference x,y,yaw
 			double ref_x = car_x;
 			double ref_y = car_y;
 			double ref_yaw = deg2rad( car_yaw );
-			//if previous size vector almost empty
+			//if prev_size vector almost empty
 			if (prev_size < 2)
 			{
+				//predict previous data
 				double prev_car_x = car_x - cos(car_yaw);
 				double prev_car_y = car_y - sin(car_yaw);
-				//add 2 points
+				//add 2 points for x array and y array
 				ptsx.push_back(prev_car_x);
 				ptsx.push_back(car_x);
 				ptsy.push_back(prev_car_y);
 				ptsy.push_back(car_y);
-			}else {
-				//use last previous points
+			}else{ // else prev_size vector not empty
+				//use last previous points from provided msg data
 				ref_x = previous_path_x[prev_size - 1];
 				ref_y = previous_path_y[prev_size - 1];
 				double ref_x_prev = previous_path_x[prev_size - 2];
 				double ref_y_prev = previous_path_y[prev_size - 2];
 				ref_yaw = atan2(ref_y - ref_y_prev, ref_x - ref_x_prev);
-				//add 2 points
+				//add 2 points for x array and y array
 				ptsx.push_back(ref_x_prev);
 				ptsx.push_back(ref_x);
 				ptsy.push_back(ref_y_prev);
 				ptsy.push_back(ref_y);
 			}
-			//add 3 key points , separated with 30 m each : usig Frenet
+			//now create 3 KEY points , separated with 30 m each , using Frenet
 			vector<double> next_wp0 = getXY(car_s+30, (2+4*lane),map_waypoints_s,
 												map_waypoints_x, map_waypoints_y);
 			vector<double> next_wp1 = getXY(car_s+60, (2+4*lane), map_waypoints_s,
 												map_waypoints_x, map_waypoints_y);
 			vector<double> next_wp2 = getXY(car_s+90, (2+4*lane), map_waypoints_s,
 												map_waypoints_x, map_waypoints_y);
-			//add as new points
+			//add as new points to x and y arrays
 			ptsx.push_back(next_wp0[0]);
 			ptsx.push_back(next_wp1[0]);
 			ptsx.push_back(next_wp2[0]);			
@@ -364,26 +321,26 @@ int main() {
 				ptsy[i] = (shift_x*sin(0-ref_yaw) + shift_y*cos(0-ref_yaw));
 			}
 
-			//create the spline fron the key points
+			//create the spline from the key points, in other words fill the in-betweens of the KEY points
 			tk::spline s;
 			s.set_points(ptsx, ptsy);
-			/************/
 
-
+			//now let's fill the new path vectors
           	vector<double> next_x_vals;
           	vector<double> next_y_vals;
-			//first add points from previous msg
+			//first add remaining points from previous msg data
 			for (int i = 0; i < previous_path_x.size(); i++)
 			{
 				next_x_vals.push_back(previous_path_x[i]);
 				next_y_vals.push_back(previous_path_y[i]);
 			}
-
+			//get ready to add the new data
 			double target_x = 30.0;
 			double target_y = s(target_x);
 			double target_dist = sqrt((target_x*target_x) + (target_y*target_y));
 			double x_add_on = 0;
-			//now fill the remaining path with new points useing spline
+			//now fill the rest of the path with new points using spline points, 
+			//path size is 50
 			for (int i = 1; i <=50-previous_path_x.size(); i++)
 			{
 				double N = (target_dist / (.02*ref_val / 2.24));
@@ -404,21 +361,7 @@ int main() {
 				next_x_vals.push_back(x_point);
 				next_y_vals.push_back(y_point);
 			}
-			/*
-          	// TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
-			double dist_inc = 0.45;
-			for (int i = 0; i < 50; i++)
-			{
-				double next_s = car_s + (i + 1)*dist_inc;
-				double next_d = 6;//we are @ 1.5 lane away from 0 points * 4 meters wide per lane = 6
-				vector<double> xy = getXY(next_s, next_d, map_waypoints_s,
-									map_waypoints_x, map_waypoints_y);
-				next_x_vals.push_back(xy[0]);//(car_x + (dist_inc*i)*cos(deg2rad(car_yaw)));
-				next_y_vals.push_back(xy[1]);//(car_y + (dist_inc*i)*sin(deg2rad(car_yaw)));
-			}
-			cout << "size : " << next_x_vals.size() << endl;
-			*/
-			//end of path points
+
           	json msgJson; 
           	msgJson["next_x"] = next_x_vals;
           	msgJson["next_y"] = next_y_vals;
