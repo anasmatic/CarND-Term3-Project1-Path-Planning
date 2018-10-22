@@ -20,8 +20,8 @@
 using namespace std;
 
 int MAX_COST = 10;
-int AHEAD_SAFE_ZONE = 25;
-int COLLISION_ZONE = 15;
+int AHEAD_SAFE_ZONE = 15;// 25;
+int COLLISION_ZONE = 10;// 15;
 //constructor
 TrajectoryGenerator::TrajectoryGenerator() {}
 //_________________________________________________________________________
@@ -142,7 +142,10 @@ int TrajectoryGenerator::cost_of_LANE_CHANGE_RIGHT(	nlohmann::basic_json<> &sens
 //param: cost , if it was set by LeftLane function it will be 0, but if from rightLane function it will be initialized as 1
 void TrajectoryGenerator::lane_change_cost(	nlohmann::basic_json<> &sensor_fusion, double &car_s, 
 											int &previous_path_x_size, int &newlane, int &cost, double &my_car_vel) {
-
+	int TOO_CLOSE_BACK = 5;// 10;
+	int CLOSE_BACK = 10;// 35;
+	double S_CAR_TIME = 0.005;// 0.04//2 seconds
+	double MY_CAR_TIME = 0.0025;// 0.02//1 seconds
 	for (int i = 0; i < sensor_fusion.size(); i++) {//loop through cars around us
 		float d2 = sensor_fusion[i][6];//get d of a check_car in order to find its lane
 		if (d2 < (2 + 4 * newlane + 2) && d2 >(2 + 4 * newlane - 2)) {//if check_car is in new lane
@@ -171,14 +174,16 @@ void TrajectoryGenerator::lane_change_cost(	nlohmann::basic_json<> &sensor_fusio
 					}
 				}
 				else {//car coming from behind
-					if (abs_delta_s < 10) {//TOO CLOSE, never allow lane change
+					if (abs_delta_s < TOO_CLOSE_BACK) {//TOO CLOSE, never allow lane change
+						cout << "Back_TOO_Close" << endl;
 						cost += MAX_COST;
 					}
-					else if (abs_delta_s < 35) {//not so close ?
+					else if (abs_delta_s < CLOSE_BACK) {//not so close ?
+						cout << "Back_Close" << endl;
 						//predict check_car s after 2 seconds
-						double check_car_new_s = check_car_s+(((double)previous_path_x_size*0.04*check_speed));
+						double check_car_new_s = check_car_s+(((double)previous_path_x_size*S_CAR_TIME*check_speed));
 						//predict my s after 1 seconds
-						double my_car_new_s = car_s + (((double)previous_path_x_size*0.02*my_car_vel/2.24));
+						double my_car_new_s = car_s + (((double)previous_path_x_size*MY_CAR_TIME*my_car_vel/2.24));
 						if (check_car_new_s >= my_car_new_s) { //if check_car may collide with me in the future
 							cost += MAX_COST;//NEVER ALLOW LANE CHANGE
 						}
